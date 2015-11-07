@@ -5,6 +5,7 @@
  */
 package game;
 
+import game.Segments.BoardDirector;
 import game.sprites.Sprite;
 import game.Segments.SegmentBlock;
 import game.Segments.Segment;
@@ -26,6 +27,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import main.KeyListen;
 import media.Media;
 
 /**
@@ -34,124 +36,26 @@ import media.Media;
  */
 public class Game extends JPanel {
 
-    private final int TILESIZE = 32;
+    
     private JFrame frame;
     private ArrayList<Segment> plansza;
     private Sprite sprite;
+    private int numberBoard=1;
     GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-                
+      BoardDirector director = new BoardDirector();
 
-    private ArrayList<Segment> stworzPlansze(URL plik) {
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(plik.getFile()));
-            ArrayList<Segment> plansza = new ArrayList<Segment>();
-            String linia;
-            int x, y = 4, liczba, znaki;
-            char znak, cyfra1, cyfra2;
-            while ((linia = br.readLine()) != null) {
-                x = 4;
-                znaki = 0;
-                while ((linia.length() - znaki) >= 3) {
-                    znak = linia.charAt(znaki++);
-                    cyfra1 = linia.charAt(znaki++);
-                    cyfra2 = linia.charAt(znaki++);
-                    liczba = (cyfra1 - '0') * 10 + (cyfra2 - '0');
-                    switch (znak) {
-                        case 'X':
-                            x += liczba * TILESIZE;
-                            break;
-                        case 'A':
-                            for (int i = 0; i < liczba; ++i) {
-                                Segment s = new SegmentBlock(x, y, Media.class.getResource("block1.png"));
-                                plansza.add(s);
-                                x += TILESIZE;
-                            }
-                            break;
-                        case 'B':
-                            for (int i = 0; i < liczba; ++i) {
-                                Segment s = new SegmentBlockV(x, y, Media.class.getResource("block2.png"));
-                                plansza.add(s);
-                                x += TILESIZE;
-                            }
-                            break;
-                        case 'C':
-                            for (int i = 0; i < liczba; ++i) {
-                                Segment s = new Segment(x, y, Media.class.getResource("block3.png"));
-                                plansza.add(s);
-                                x += TILESIZE;
-                            }
-                            break;
-                        case 'G':
-                            for (int i = 0; i < liczba; ++i) {
-                                Segment s = new SegmentAnim(x, y, Media.class.getResource("bonus.png"), new int[]{0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 2, 2, 1, 1, 1, 0, 0});
-                                plansza.add(s);
-                                x += TILESIZE;
-                            }
-                            break;
-                    }
-                }
-                y += TILESIZE;
-            }
-            br.close();
-            return plansza;
-        } catch (IOException e) {
-            System.out.println("Blad wczytania planszy");
-            e.printStackTrace();
-            return null;
-        }
-    }
+    
 
-    public Game(URL plik, final JFrame _frame) {
+    public Game(final JFrame _frame) {
 
         frame = _frame;
+        plansza = director.getBoard(numberBoard);
+        sprite = new Sprite(plansza);
         setPreferredSize(new Dimension(800, 600));
-        addKeyListener(new KeyAdapter() {
-            
-            
-            @Override
-            public void keyReleased(KeyEvent ev) {
-                switch (ev.getKeyCode()) {
-                    case KeyEvent.VK_UP:
-                    case KeyEvent.VK_DOWN:
-                        sprite.stopMoveY();
-                        break;
-                    case KeyEvent.VK_LEFT:
-                    case KeyEvent.VK_RIGHT:
-                        sprite.stopMoveX();
-                        break;
-                }
-            }
-
-            @Override
-            public void keyPressed(KeyEvent ev) {
-                switch (ev.getKeyCode()) {
-                    case KeyEvent.VK_LEFT:
-                        sprite.left();
-                        break;
-                    case KeyEvent.VK_RIGHT:
-                        sprite.right();
-                        break;
-
-                    case KeyEvent.VK_DOWN:
-                        sprite.down();
-                        break;
-                    case KeyEvent.VK_UP:
-                        sprite.up();
-                        break;
-                    case KeyEvent.VK_F12:
-                        gd.setFullScreenWindow(frame);
-                        break;
-                    case KeyEvent.VK_ESCAPE:
-                        System.exit(0);
-                        break;                  
-                }
-            }
-        });
+        addKeyListener(KeyListen.getInstance(sprite, frame));
 
         setFocusable(true);
-        plansza = stworzPlansze(plik);
-        sprite = new Sprite(plansza);
+        
 
         new Thread(new SpriteController(sprite, plansza, this)).start();
     }
